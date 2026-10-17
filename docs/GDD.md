@@ -567,3 +567,121 @@ Cada hipótese tem métrica, protocolo e critério de refutação. Nenhuma está
 - **Voltar o relógio** para repetir a quest diária → o jogo guarda a última data vista; data anterior não libera nada.
 - **Repetir a mesma semente** (código de desafio) para farmar → partida por código não paga sucata; vale só o placar.
 - **Save antigo ou de versão futura** → migração explícita v0→v1; versão futura é recusada sem apagar o save.
+
+---
+
+## Lições do estúdio aplicadas a Scrapstorm (do Dungeon Courier, 2026-10-16)
+
+O Dungeon Courier (DC) foi do GDD à 1.4.1-beta com núcleo testado fora do Unity, arte v2, tutorial guiado, anúncios e compras, AAB assinado e política pública; cada lição abaixo foi paga lá com tempo, crédito ou retrabalho. O playbook completo está em [`docs/LICOES_PARA_O_ESTUDIO.md`](https://github.com/Vvs2705/dungeon-courier/blob/main/docs/LICOES_PARA_O_ESTUDIO.md) (repositório `Vvs2705/dungeon-courier`), com cópia na memória do estúdio em `C:\Users\VINICIUS\Videos\MEUS PROJETOS\Agentes\_memoria\PLAYBOOK_ESTUDIO_DUNGEON_COURIER.md`. O DC é o parente mais próximo do Scrapstorm no estúdio: ação de um dedo em retrato, ataque automático, inimigos com chefes, simulação com semente e bot. Boa parte do que o §13 e o §23 esperam do ARKANA já existe no DC, desacoplada. Status de tudo: **PROPOSTO**. Caminhos marcados "DC" são do repositório `dungeon-courier`; "Forge", de `03_FORGE_STREET`; "ARKANA", de `ARKANA/mobile-unity/Assets/_Arkana/Resources/`. Clipes Mixamo ficam fora do git, no checkout principal. A reutilização entre projetos tem aval do Vinicius de 2026-10-09 (cópia, sem alterar a origem). Formato de cada item: **o que fazer** · **por quê** (o que aconteceu no DC) · **reaproveitar**.
+
+### Processo
+- **Contrato da v0.1 antes do 1º código.** **O que fazer:** escrever `docs/CONTRATO_V01.md` com o escopo do §18–19 (1 arena, 6 módulos, 4 inimigos, 1 elite, 1 chefe, placas e tempestade, simulação com semente) e os números das "Regras" do §2 como hipóteses que o bot mede em `docs/BALANCE.md`. Depois, `docs/CONTRATO_LANCAMENTO.md` com a matriz "seção do GDD × feito". **Por quê:** no DC, o contrato escrito antes deixou núcleo e View andarem em paralelo, e a matriz é o que diz "pronto". **Reaproveitar:** DC `docs/CONTRATO_V01.md` (a §2 já define o contrato Core ← View de um jogo de um dedo) e `docs/CONTRATO_LANCAMENTO.md` §1.
+- **Memória de retomada.** **O que fazer:** ao começar o código, criar `scrapstorm.md` e `STATUS_scrapstorm-v01.md` em `Agentes\_memoria\`, com um bloco "CONTINUAR DAQUI" a cada pausa. **Por quê:** o Vinicius retoma dizendo só "vamos continuar"; sem esse bloco, cada sessão reabre a investigação.
+- **Fotos antes do PR.** **O que fazer:** foto `-shot` de cada tela e de momentos de combate (mech com 24 placas, horda cheia, placas caídas, tempestade fechando). **Por quê:** no DC, as fotos pegaram o joystick tampando o personagem e texto sobreposto, e nenhum dos 169 testes verdes pegou isso. Aqui, o risco é a poluição visual em tela pequena (§27 D1).
+- **Um processo pesado por vez.** Render do elenco no Blender e Unity nunca juntos (PC de 7,7 GB); render em segundo plano e com `timeout` (no DC, um render travou 15 h com o PC suspenso).
+- **Proveniência desde o 1º asset**, em `docs/PROVENIENCIA.md` (DC `docs/PROVENIENCIA.md` §1 e §6 como modelo).
+
+### Código e testes
+- **Esqueleto copiado, não reescrito.** **O que fazer:** copiar a estrutura `Scripts/Core` (asmdef com `noEngineReferences`), `Scripts/View`, `Editor/Setup.cs`, `Tests/EditMode`, `client/tools/coretests`, `client/tools/viewcheck` e o CI do núcleo, trocando `DC` por `SS`. **Reaproveitar:** DC `client/Assets/_DC/Scripts/Core/DC.Core.asmdef`, `client/Assets/_DC/Editor/Setup.cs`, `client/tools/coretests/DCCore.Tests.csproj`, `client/tools/viewcheck/`, `.github/workflows/nucleo.yml`.
+- **Núcleo determinístico em passo fixo de 1/30 s, com xorshift e semente.** **O que fazer:** fazer do `Sim` a fachada, com `Tick(dt, move, dodge)` e a API documentada no topo; a View só desenha o estado e lê `Sim.Events`. Isso é o que o §13 ("simulação headless da run em passo fixo") e o §27 D6 (desafio por código) pedem. **Por quê:** no DC, foi o que permitiu 169 testes, bot e balance fora do Unity, e o determinismo custa caro se for adaptado depois. **Reaproveitar:** DC `client/Assets/_DC/Scripts/Core/Sim.cs` (`Tick(float dt, V2 move, bool dash)`), `Run.cs`, `Defs.cs` e o vetor `V2` próprio. É novo, e o DC não tem: a horda de 150+ inimigos com hash espacial e pool.
+- **Bot e `-autoplay N` para a H2.** **O que fazer:** um bot com semente e 3 políticas de extração ("sempre no 1º bloco", "nunca", "adaptativa por placas × vida"). `-autoplay` imprime a sucata por minuto por bloco, a % de extração por ponto, as mortes e as placas recolhidas, mais o teste "mesma semente 2× = mesmo resultado" (D6). **Por quê:** no DC, o bot mediu o balance e serviu ao portão e aos criativos; a duração real da run (H4) só se mede com gente. **Reaproveitar:** DC `client/Assets/_DC/Scripts/Core/Bot.cs` (heurístico, com `Aggression`, `Greed` = apetite de risco e `Reaction` = handicap humano); Forge `client/tools/econsim/` (perfis × partidas → CSV).
+- **Catálogo de exploits do §28 como testes nomeados**, um por linha: fechar o app antes de morrer, rewarded repetido, farm no 1º bloco, relógio para trás, semente repetida e save antigo ou futuro. No DC, a §28 virou teste do mesmo jeito.
+- **Diário CSV de playtest.** **O que fazer:** gravar os eventos do §14 e os de 2026-10-09 (`plate_*`, `heat_level`, `extraction_*`), sem dado pessoal. O relatório calcula a H2 (concentração > 60% num ponto), a H3 (< 40% das placas recolhidas) e a H4. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Exportar.cs` e `client/tools/diario_report.py`.
+- **Flags de teste no build, todas sob `-testsession`.** **O que fazer:** `-tela`, `-arena A`, `-bloco N`, `-placas N` (mech cheio para foto e para o criativo #9), `-modulos a,b,c`, `-seed CÓDIGO`, `-boss`, `-bot`, `-lang`, `-shot`, `-record`, `-tutorial` e `-dev-desbloqueia`. **Por quê:** os criativos #1, #11 e #12 do §17 pedem exatamente esses estados, gravados do jogo real. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Game.cs`.
+- **Portão antes de todo PR.** **O que fazer:** seguir o `CONTRIBUTING.md` e somar `-autoplay 30` com 0 exceções e as fotos. Rodar o EditMode antes do PR, porque o NUnit do dotnet (3.14) e o do Unity (3.5) divergem. **Reaproveitar:** Forge `client/tools/verify.sh` e `client/tools/mutantes/mutantes.py`.
+- **Textos em 4 idiomas e áudio sintetizado.** **O que fazer:** `L(pt, en, es, id)` com a frase inteira; os 9 sons do §12 gerados por script, com variações do auto-fire, que é o som mais repetido. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Textos.cs` e `client/tools/audio_gen.py`. Armadilhas com solução pronta no DC: não ler PlayerPrefs em inicializador de campo, e usar `using Rect = UnityEngine.Rect;`.
+
+### Arte e animação
+**Decisão antes do 1º crédito: sprites pré-renderizados (como no DC) ou 3D em tempo real.** O 3D deixa os soquetes triviais ("filhos sem rig", `COMPETITIVO.md` D1), mas 150 malhas com esqueleto ameaçam os 30 FPS da H5. Recomendo sprites para os inimigos e decidir o mech na bancada da H5 (§28). O resto desta subseção assume sprites, pelo `render_sprites.py` do DC.
+- **Módulos e placas separados do mech (regra do Vinicius), e aqui ela é o próprio hook.** **O que fazer:** os 7 tipos do §2 são gerados à parte e presos ao osso no render. Escudo no `mixamorig:LeftForeArm`; arma frontal e serra no `mixamorig:RightHand`; trilho no `mixamorig:RightShoulder`; capacitor nas costas, no `mixamorig:Spine2`, como a mochila do ferreiro do Forge. O drone não se prende: é um prop que voa ao lado. Como 6 módulos dão 64 combinações, cada módulo vira uma camada com os mesmos clipes, quadros e direções do mech, composta na View. Isso é **adaptação nova** do `--attach`, que hoje renderiza item e personagem juntos. Placas: começar com um deslocamento fixo por direção (8 direções × 24 soquetes, tabela na View); se a placa "flutuar" no passo, passar a âncora por quadro no `meta.json`, como o `--hold` já faz com a mão. **Por quê:** quando o Tripo gera item e corpo juntos, funde os dois e o rig arrasta o item errado (o guarda v1 do DC foi descartado por isso). **Reaproveitar:** DC `client/tools/render_sprites.py` (`--attach item:Osso:pos:rot:escala`, `--hold`, 4/8 direções e espelho); Forge `client/tools/folha_mochila.py` (antes × depois do item preso ao `Spine2`).
+- **Mech do jogador (1 chassi no MVP).** Caminho: imagem grátis (4 opções, escolhida pela leitura no ângulo do jogo) → Modelo HD (45) → Auto Rig humanoide Mixamo (20) se o mech for bípede e estiver em pose T. Clipes que já existem:
+  - parado: Forge `03_FORGE_STREET/arte/mixamo/Idle.fbx` (Breathing Idle, janela 199–289) ou DC `arte/mixamo/_blender/GuardIdle.fbx` (postura firme, pé no chão, mais "máquina");
+  - andar e correr: ARKANA `mixamo-loc-andar-frente.fbx` e `mixamo-loc-correr-frente.fbx`. O `render_sprites.py` tira o root motion e grava `stride_mps`, e os −1,5% de velocidade por placa são só passo mais lento, sem clipe novo;
+  - esquiva: DC `arte/mixamo/_blender/Dash.fbx`;
+  - golpe leve: DC `_blender/Hit.fbx`; golpe pesado (arranca 3 placas): ARKANA `mixamo-standing-react-large-from-front.fbx`;
+  - queda na arena (§3, "o mech cai"): ARKANA `mixamo-pouso-da-queda.fbx` e `mixamo-standing-land-to-standing-idle.fbx`;
+  - extração concluída: Forge `Cheering.fbx`; morte: DC `_blender/Collapse.fbx` (desmorona de bruços).
+  - Se o mech não for bípede (esteira, pernas de aranha), usar o rig "Outro" do Tripo (20) e clipes por keyframe no Blender, como o dragão do DC (`client/tools/dragao_blender.py`).
+- **Inimigos robôs (MVP: 4 tipos, 1 elite e 1 chefe), por papel, com clipes que já existem:**
+  - corpo a corpo leve: ARKANA `mixamo-loc-correr-frente.fbx` + DC `_blender/Punch.fbx` (impacto no quadro 6 de 12) + `_blender/Hit.fbx`;
+  - kamikaze: ARKANA `mixamo-loc-correr-frente.fbx` + DC `_blender/MagmaSplit.fbx` (cambaleia, encolhe e estoura);
+  - granadeiro: ARKANA `mixamo-loc-correr-tras.fbx` (recua, como o kobold do DC) + DC `_blender/KoboldToss.fbx` (soltura no quadro 7 de 12);
+  - atirador de braço-canhão: clipe novo no DC `client/tools/anim_blender.py`, a partir das poses do `_blender/NecroCast.fbx` (aponta à frente, disparo no quadro 10 de 12; 0 crédito). Os clipes de magia do ARKANA foram testados no DC e liam como feitiço;
+  - pesado e elite: o conjunto do golem do DC inteiro, `arte/mixamo/golem/` (`Idle`, `Walk`, `Slam`, `Charge`, `Stun`) + `golem_fim/Dying.fbx` (`Collapse`);
+  - chefe: DC `_blender/Roar.fbx` (abertura), `Slam.fbx`, `Charge.fbx`, `Stun.fbx` (janela de dano depois da investida), `ForemanSpin.fbx` (giro de 360° = ataque de serra) e `Collapse.fbx`;
+  - drone inimigo: prop sem rig (45, ou primitivas no Blender a 0 crédito), com balanço e inclinação na View.
+  - O "telegraph claro" do §3 sai do quadro de impacto, que já está medido para cada clipe na tabela do DC `docs/PROVENIENCIA.md` §3. O Core usa a mesma fração para a janela de esquiva. Nunca mover action crua entre esqueletos: o retarget é por delta de rotação sobre o repouso.
+- **Elite e variantes por troca de cor, 0 crédito.** **O que fazer:** o elite é o inimigo comum recolorido e com `--escala 1.3`; o evento "Toxic Scrapstorm" (§9) é a paleta verde; as skins de chassi (cosmético) são o recolor da folha. **Reaproveitar:** DC `client/tools/roupas_cor.py` e `client/tools/roupas_2d.py` (direto na folha, com luz chapada).
+- **Blender por script em vez de gerar de novo.** **O que fazer:** placas, capacitor, trilho, escudo e a cápsula de extração por primitivas, a 0 crédito; a cápsula que abre segue o corte com dobradiça do baú do DC. **Reaproveitar:** Forge `client/tools/props_blender.py` e `itens_blender.py`; DC `client/tools/bau_abrindo.py`.
+- **Interface pintada no gerador grátis.** **O que fazer:** logo, ícones dos módulos para as cartas 1-de-3 (folha 4×3 sobre azul-marinho liso), fundo do hangar e retratos da operadora e do chefe. **Reaproveitar:** DC `client/tools/ui_assets.py`.
+- **Nitidez × tamanho.** **O que fazer:** folha HD só para o mech e o chefe (`--hd K --escala E`, com K = min(1,5; 4096 / (quadros × célula))); inimigos comuns em resolução menor. **Por quê:** no DC, as folhas HD levaram o APK de 67,7 para 83 MiB. **Reaproveitar:** DC `client/tools/elenco_hd.sh`.
+- **Custo estimado em créditos do Tripo (Lote 1, com aval):** mech 65 + 3 inimigos humanoides (3 × 65 = 195) + drone 45 + chefe 65 + arma frontal e serra, que não saem bem por primitivas (2 × 45 = 90) ≈ **460**, com teto de 550. Elite, variantes, placas, cápsula, demais módulos e UI custam 0. Referência: o Lote 1 do DC custou 530 (10 modelos + 4 rigs). Conferir o saldo antes e depois e a receita do painel na 1ª peça.
+
+### Interface e marca
+- **UI procedural em 9-fatias, tingida por código:** cartas de módulo (`Moldura`, `Botao`), anel de extração (`Contorno`), barra de calor e números de sucata com `Letreiro`. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Art.cs`. Fontes OFL: Lilita One e Nunito ExtraBold, com a licença junto.
+- **Escala e toque.** CanvasScaler 1080×1920 casando a largura, `AreaSegura` e `Dp` (48 dp). **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/AreaSegura.cs` e `Dp.cs`, as mesmas classes que o §13 cita no ARKANA.
+- **Telas 20:9.** **O que fazer:** a arena continua escurecida até a borda; a tempestade é o fundo natural fora da área de jogo. **Por quê:** no DC, faixa lisa na borda parecia bug.
+- **Ícone adaptativo:** o mech com placas, ocupando no máximo 0,64 da camada, conferido nas máscaras círculo, squircle e quadrado (DC `client/tools/icone_app.py`). O retrato do cartão de ferro-velho (D5) sai do recorte do quadro (`SpriteSheet.Retrato` em DC `client/Assets/_DC/Scripts/View/SpriteSheet.cs`).
+
+### Onboarding (tutorial guiado)
+Tour do DC: a Sim congela nos passos de explicação (no passo fixo é trivial, e ninguém toma dano lendo), véu com buraco, contorno dourado, seta e cartão com o que é, quando usar e por quê. Nos passos de ação, só o alvo responde. Cada passo aparece uma vez, com "Pular tutorial" e "REVER TUTORIAL", desligado no `-testsession`. Passo de ação se cancela se a tela mudar (no DC, um passo preso congelou o jogo depois do resultado). **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Tour.cs` (troca só os passos e os gatilhos).
+
+| # | Quando (gatilho) | O que acende | Cartão: o que · por quê |
+|---|---|---|---|
+| 0 | run 1, antes do 1º toque | cartão da operadora (abaixo) | quem manda o mech e o que pede |
+| 1 | run 1, mech pousado | a tela toda (ação: andar 1,5 m) | "Arraste o dedo para andar" · o verbo central vem antes de qualquer escolha |
+| 2 | 1º inimigo no alcance | o inimigo e o tiro | "O mech atira sozinho no mais perto; você cuida de onde ficar" |
+| 3 | 1ª sucata recolhida | a placa nova no corpo | "Sucata vira blindagem: segura golpes, pesa e atrai robôs" · é o hook D1 no 1º minuto |
+| 4 | 1º marco de XP | as 3 cartas (ação: escolher) | "Escolha 1. Ele se prende ao mech até o fim da run" |
+| 5 | 1º golpe forte (~2:00) | as placas no chão (ação: recolher 1 em 3 s) | "Placas caíram! Passe por cima antes que sumam" · a H3 depende disso |
+| 6 | 1º ataque com telegraph | o aviso no chão (ação: esquivar) | "Toque rápido = esquiva" |
+| 7 | tempestade fechando | seta para a cápsula | "A tempestade está fechando. Vá até a cápsula" |
+| 8 | dentro do círculo | anel de 5 s e barra de calor | "Fique 5 s. Mais placas = mais robôs vindo" |
+| 9 | hangar, 1ª vez | saldo de sucata e 1º sidegrade (ação: comprar) | "Isto é o que você salvou. Compre a 1ª melhoria" · o valor da sucata vem antes do risco |
+| 10 | run 2, 1º fim de bloco | a cápsula e o "x1,5" do bloco 2 | "Extrair com o que tem ou seguir por x1,5?" · a 1ª escolha real |
+| 11 | 1ª vez com calor > 75% | o contorno pulsante | "Calor alto: a horda engrossa" |
+
+- **Cartão de contexto em vez de cutscene.** **O que fazer:** a queda do mech (§3) é o 1º plano de jogo, sem cena antes. No lugar do 1º cartão do tour entra um retrato pintado de quem manda o mech, com balão de fala. Exemplo (PROPOSTO; o GDD ainda não tem personagem nomeado), a operadora do ferro-velho: *"Tempestade chegando. Junta toda sucata que der e volta inteiro: a cápsula desce quando o céu fechar."*. O ciclo fecha no hangar, com a fala dela sobre o que voltou. **Por quê:** no DC, a cutscene antes do 1º toque somava com o tutorial e virava parede de texto.
+- **Controle sem desenho tampando o mech e as placas.** **O que fazer:** o joystick do §2 fica invisível por padrão (mesma lógica, sem desenho sob o dedo), com a opção "Controle na tela" nas configurações. A dodge é o toque rápido, como o dash do DC. **Por quê:** no DC, o joystick desenhado tampava o personagem. Aqui ele tamparia também as placas caídas que o jogador tem 3 s para recolher. O gênero costuma mostrar o joystick; se a Camada 0 pedir, ligar o desenho pequeno e translúcido. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Joystick.cs` (`JoystickLogica` pura, que veio do ARKANA via Forge Street, e `Joystick.Visivel`).
+
+### Monetização e compliance
+- **Dentro dos guardrails, conferido:** 1 moeda (Sucata), Cores e Blueprints fora do MVP (§6); sem energia; caixa do dia com conteúdo visível; interstitial desligado na v0.1; rewarded opcional com id de transação `rw-<runId>-<tipo>` (§7); "sem energia, sem gacha" como posicionamento (D4).
+- **Anúncio não personalizado para todos e sem `AD_ID` (falta no GDD).** O público do §1 começa em 13 anos, então isso não é opcional aqui. **O que fazer:** `LevelPlayPrivacySettings` antes do `Init` (GDPR sem consentimento, CCPA opt-out, COPPA desligado), o manifesto sem `AD_ID` e sem as permissões do Privacy Sandbox, e "não" na declaração de ID de publicidade. **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Anuncios.cs`, `AnunciosLevelPlay.cs`, a classe `SemIdDePublicidade` em `client/Assets/_DC/Editor/Setup.cs` e `docs/MONETIZACAO.md` §4.
+- **IAP.** Remove Ads e Starter Pack de conteúdo fixo, com compra em 2 passos, loja falsa no PC e "Restaurar compras". **Reaproveitar:** DC `client/Assets/_DC/Scripts/View/Loja.cs` e `LojaIap.cs`.
+- **Política de privacidade** no GitHub Pages, em 4 idiomas, citando as redes usadas (modelo: https://vvs2705.github.io/dungeon-courier/).
+
+### Play e lançamento
+- **Conta da Play: a de organização da V-STACK, uma só para todos os jogos.** O D-U-N-S já foi pedido pelo DC (previsão 2026-11-25); o Scrapstorm entra na mesma conta. O appId `br.com.vstack.scrapstorm` é fixado no `Setup.cs` e não muda depois do 1º upload. Conferir a marca "Scrapstorm" antes da loja.
+- **Chave de upload própria** em `%USERPROFILE%/.scrapstorm/`, fora do git e com backup fora do PC.
+- **AAB assinado por `Setup.BuildAndroidBundle`** (no DC, foram conferidos targetSdk 36, 16 KB e Billing 9).
+- **Loja e criativos pelos scripts, só com gameplay real:** DC `client/tools/loja_fotos.sh`, `loja_assets.py` e `criativos.py`. O cartão final "sem energia, sem gacha" (#13 do §17) entra no CTA do `criativos.py`. Pré-release no GitHub a cada versão.
+
+### Android
+- **`vSyncCount = 0` e `targetFrameRate = 60` no início** (no DC, o POCO foi de 28–36 para 55 fps). Com horda, medir antes de prometer 60: o piso do §26 é 30.
+- **Desempenho e calor se medem em aparelho original de entrada, não no POCO do Vinicius**, que se limita depois de 1 min e não serve de régua para a H5. **Reaproveitar:** Forge `client/tools/medir_aparelho.sh` (FPS do SurfaceFlinger, memória, `--temp-serie 30` para a temperatura numa sessão longa) e a `BancadaDeCortes`/`MedidorDeFps` do ARKANA (§13).
+- **APK de worktree via `subst R: <client>`**, só o APK atual e o adb com aspas internas nos argumentos (`-e unity '-bot -seed X'`).
+
+### Conflitos com o GDD atual
+Esta seção só aponta os conflitos; as seções acima no GDD não foram editadas.
+
+| Onde | O que o GDD diz | Lição contrariada | Recomendação |
+|---|---|---|---|
+| README e `COMPETITIVO.md` (e) | lote de criativos "antes de qualquer código" | regra do estúdio: criativo só de gameplay real | antes do lote, fazer o greybox mínimo (núcleo + bot + `-record`, arte de 0 crédito por primitivas e pintura grátis) e gravar os criativos dele. Mockup sem jogo não entra |
+| §2 Core mechanic | "joystick virtual de um dedo" | controle sem desenho tampando o personagem | invisível por padrão, com a opção nas configurações; conferir em foto se o dedo esconde as placas caídas |
+| §3 (roteiro original, 9:00–10:00) | "primeira reward chest" | nada aleatório | baú do hangar com conteúdo visível antes de abrir, como a revisão do §7 já faz com a caixa do dia |
+| §6 tabela e §7 Rewarded | reroll de módulo (1 grátis; os demais por rewarded) | nada aleatório pago, nem por moeda | ok só por rewarded; nunca por IAP nem por sucata. Se o Starter Pack trouxer sucata, o reroll não pode custar sucata |
+| §7 IAP (lista original) | "cores" e "event pack" | 1 moeda; conteúdo fixo | já adiado para a v1.0; manter Cores fora até existir mapa de fontes e ralos, e pacote sempre com conteúdo listado |
+| §13 e §23 | joystick do ARKANA "a desacoplar"; `AreaSegura`, `Dp` do ARKANA | copiar o que já foi pago | pegar a versão do DC: `JoystickLogica` já desacoplada em `Joystick.cs`, mais `AreaSegura.cs` e `Dp.cs` |
+| §11 | "módulos encaixáveis fisicamente", sem regra de produção | itens gerados separados do corpo | módulos e placas nunca no mesmo modelo do mech; render em camadas (subseção Arte) |
+| §26 e §28 H5 | "30 FPS de piso nos aparelhos-alvo mínimos" | desempenho se mede em aparelho original | definir já qual aparelho de entrada é a régua; o POCO F4 não serve |
+
+### Primeiros passos recomendados
+O Scrapstorm está na fila como "depois" (README). Os passos 1 e 2 cabem antes da vez dele; o resto só quando o Vinicius liberar.
+1. Resolver os conflitos acima no GDD (reroll, baú, joystick, ordem greybox → criativos) e escolher o aparelho de entrada da H5.
+2. Escrever `docs/CONTRATO_V01.md` e criar a memória `STATUS_scrapstorm-v01.md`.
+3. Copiar o esqueleto do DC e fazer o núcleo em passo fixo com semente, com `Joystick.cs` e os exploits do §28 como testes nomeados.
+4. Bot com 3 políticas de extração e `-autoplay`: provar a H2 no bot antes de gastar arte.
+5. Bancada de 150 inimigos + 24 placas no aparelho de entrada (`medir_aparelho.sh`), para decidir sprite × 3D (H5).
+6. Greybox com arte de 0 crédito e `-record`; gravar o lote de 8–10 criativos (H1) com o cartão "sem energia, sem gacha".
+7. Se a H1 passar: Lote 1 do Tripo (~460 créditos, com aval) e os clipes reaproveitados da lista acima.
+8. Tour com os 12 passos acima, cartão da operadora, diário CSV e Camada 0 com 5–8 pessoas (H2, H3).
