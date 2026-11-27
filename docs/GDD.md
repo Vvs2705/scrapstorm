@@ -1,3 +1,9 @@
+> **Revisão 2026-11-27 (Conselho do TIME DE JOGOS) — veredito: NÃO FAZER AGORA (o "depois" de 2026-10-09 continua, com condição objetiva).** Ata: [`conselho/2026-11-27-revisao-gdd.md`](conselho/2026-11-27-revisao-gdd.md); visão do portfólio: `JOGOS NOVOS/00_PESQUISA/CONSELHO_PORTFOLIO_2026-11-27.md`.
+> 1. O core "a sucata é a blindagem + a tempestade é o relógio" é o melhor diferencial de ação do portfólio. Não muda.
+> 2. **Condição para começar:** o Dungeon Courier (o parente de ação do estúdio, 1.4.3-beta) ter coorte real com D1 ≥ 26%. Sem isso não sabemos se ação casual retém no nosso UA (§29.1).
+> 3. **Decisões técnicas tomadas** (§29.2): mech **bípede humanoide** em pose T, para usar 100% do catálogo de clipes já mapeado na seção de lições (0 animação nova); inimigos em sprite; módulos e placas em camadas compostas na View.
+> 4. **Os 8 conflitos da seção de lições foram resolvidos** (§29.3). Falta só o aparelho de entrada da H5, que é do Vinicius.
+
 # GDD 05 — SCRAPSTORM
 ## Survivor-like / Action Casual / Portrait / Android + iOS
 
@@ -685,3 +691,44 @@ O Scrapstorm está na fila como "depois" (README). Os passos 1 e 2 cabem antes d
 6. Greybox com arte de 0 crédito e `-record`; gravar o lote de 8–10 criativos (H1) com o cartão "sem energia, sem gacha".
 7. Se a H1 passar: Lote 1 do Tripo (~460 créditos, com aval) e os clipes reaproveitados da lista acima.
 8. Tour com os 12 passos acima, cartão da operadora, diário CSV e Camada 0 com 5–8 pessoas (H2, H3).
+
+
+---
+
+# 29. REVISÃO DO CONSELHO E PLANO A PARTIR DE 2026-11-27
+
+## 29.1 Por que esperar e o quê
+
+- O estúdio já tem um jogo de ação de um dedo em retrato, com ataque automático, chefes, semente e bot: o Dungeon Courier, pronto para loja e à espera do D-U-N-S (`STATUS_dungeon-courier-v01.md`).
+- O Scrapstorm herda quase tudo do DC (a seção de lições já mostra isso). O que ele **não** pode herdar é a resposta à pergunta "ação casual retém no nosso UA?". Essa resposta vem da coorte do DC.
+- **Condição para abrir:** DC com D1 ≥ 26% numa coorte de ≥ 1,5 mil installs. Se o DC ficar abaixo de 22% depois de 2 iterações, o Scrapstorm é reavaliado antes de qualquer código, porque o mesmo público vai reagir de forma parecida.
+- **O que cabe antes:** os passos 1 e 2 da seção de lições (resolver conflitos e escrever o contrato). O passo 1 foi feito nesta revisão.
+
+## 29.2 Decisões técnicas (desempate: técnica → technical-director)
+
+| Questão aberta | Decisão | Motivo |
+|---|---|---|
+| Mech bípede ou não | **bípede humanoide**, gerado em pose T, Auto Rig Mixamo (20 créditos) | todos os clipes da seção de lições (parado, andar, esquiva, golpes, queda, morte) já existem e servem ao `mixamorig:`; esteira ou aranha pede rig "Outro" e keyframe à mão, como o dragão do DC |
+| Sprite ou 3D | **inimigos em sprite**; o mech também em sprite, decidido na bancada da H5 | 150 malhas com esqueleto ameaçam o piso de 30 FPS; sprite é o caminho medido do DC |
+| Módulos e placas | **camadas compostas na View**, com os mesmos clipes, quadros e direções do mech; placas presas por âncora por quadro (`meta.json` do `render_sprites.py --hold`, com 24 soquetes) | 6 módulos dariam 64 combinações renderizadas; camada resolve com 7 folhas |
+| Horda | hash espacial + pool, sem `Physics` por inimigo, no núcleo em passo fixo | H5 e o bot precisam da run sem Unity |
+| Editor | Unity **6000.3.27f1** (o DC já está nele) | uma versão por estúdio para projeto novo |
+
+## 29.3 Conflitos da seção de lições, resolvidos
+
+| Onde | Decisão |
+|---|---|
+| criativos "antes de qualquer código" | **greybox antes**: núcleo + bot + `-record` com arte de 0 crédito; criativo de mockup vetado |
+| joystick visível | invisível por padrão, opção nas configurações; foto confere se o dedo esconde as placas caídas |
+| "primeira reward chest" (§3 original) | baú do hangar com conteúdo visível antes de abrir |
+| reroll de módulo | só por rewarded; nunca por IAP nem por sucata |
+| "cores" e "event pack" (§7) | fora até a v1.0; pacote sempre com conteúdo listado |
+| joystick e `AreaSegura`/`Dp` do ARKANA | usar as versões do DC (`Joystick.cs`, já desacoplado) |
+| módulos "encaixáveis fisicamente" | nunca no mesmo modelo do mech; render em camadas (§29.2) |
+| aparelho da H5 | **decisão do Vinicius:** um Android de entrada original (o POCO F4 não serve). Sem ele, a H5 fica NÃO AVALIADA |
+
+## 29.4 Lições novas desde 2026-10-16
+
+- **Little Terminal:** malha do Tripo fora do git quando o repo é público; o jogo compila com primitivas, e foto sem malha não vale. Este repo é público hoje: vale a mesma regra.
+- **Little Terminal:** GameCI no CI em todo PR que mexe em `client/`, com as primitivas.
+- **DC:** o Unity reescreve o fim de linha do `ProjectSettings.asset` ao abrir; `git checkout` dele antes de commitar.
